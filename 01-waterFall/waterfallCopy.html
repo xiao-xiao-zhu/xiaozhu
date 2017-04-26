@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>jQuery Plugin</title>
+    <style>
+        body {
+            margin: 0;
+
+            padding: 0;
+            font-family: "Microsoft Yahei";
+            background: #f5f5f5;
+        }
+
+        .container {
+            width: 1200px;
+            margin: 0 auto;
+            padding-top: 40px
+        }
+
+        .container > .items {
+            position: relative;
+        }
+
+        .container > .items > .item {
+            width: 232px;
+            position: absolute;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        /*目的是固定高度且不一样*/
+        .container > .items > .item > img {
+            width: 100%;
+            display: block;
+            height: 250px/*目的是固定高度且不一样*/
+        }
+
+        /*目的是固定高度且不一样*/
+        .container > .items > .item:nth-child(4n) > img {
+            width: 100%;
+            display: block;
+            height: 450px/*目的是固定高度且不一样*/
+        }
+
+        .container > .items > .item > p {
+            margin: 0;
+            padding: 10px;
+            background: #fff;
+        }
+
+        .container > .btn {
+            width: 280px;
+            height: 40px;
+            margin: 30px auto;
+            text-align: center;
+            line-height: 40px;
+            background-color: #CCC;
+            border-radius: 6px;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .container > .loading {
+            background-color: transparent;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="items">
+        <!--TODO 需要渲染数据的地方-->
+    </div>
+    <div class="btn loading">正在加载中...</div>
+</div>
+<script type="text/template" id="tpl">
+    <% for(var i = 0 ; i < items.length ; i++){ %>
+    <div class="item">
+        <img src="<%=items[i].path%>" alt="">
+        <p><%=items[i].text%></p>
+    </div>
+    <% } %>
+</script>
+<script src="js/jquery.min.js"></script>
+<script src="js/template-native.js"></script>
+<!-- 注意：如要完成合理瀑布流布局 需要每一张图片的原始尺寸-->
+<script src="js/jquery.waterfallCopy.js"></script>
+<script>
+    $(function(){
+        /*
+        * 1.默认加载第一页的数据
+        * 2.加载中的时候  按钮变成加载中...
+        * 3.加载完成之后  按钮要变成可以点击
+        * 4.加载完成之后  把数据转换成html格式的字符串
+        * 5.加载完成之后  渲染到页面中
+        * 6.加载完成之后  初始化瀑布流布局
+        *
+        * 7.点击按钮的时候加载下一页的数据
+        * 8.瀑布流渲染（23456）
+        *
+        * 9.滚动加载下一页的数据
+        * 10.瀑布流渲染（23456）
+        * */
+
+        var $btn = $('.btn');
+        var $items = $('.items');
+
+        var render = function(){
+            $.ajax({
+                type:'get',
+                url:'data.php',
+                data:{
+                    page: $btn.data('page') || 1,     /*当前页码*/
+                    pageSize: 10,/*当前页数据的条数*/
+                },
+                dataType:'json',
+                beforeSend:function(){
+                    $btn.html('正在加载中...').addClass('loading');
+                },
+                success:function(data){
+
+                    /*判断没有数据*/
+                    if(!data.items || !data.items.length){
+                        $btn.html('没有数据了').addClass('loading');
+                        return false;
+                    }else{
+                        $btn.html('加载更多').removeClass('loading');
+                    }
+
+                    /*转换html格式字符串*/
+                    var html = template('tpl',data);
+                    /*渲染*/
+                    $items.append(html);
+                    /*瀑布流*/
+                    $items.WaterFall();
+                    /*存下一页码*/
+                    $btn.data('page',data.page);
+                }
+            });
+        }
+        render();
+
+        /*$('xxx').data()
+        当本身原生存在自定义属性的时候 这个时候去data获取获取的属性值和dom元素上一样
+        如果通过data设置过  值设置在元素内存当中
+        */
+
+        /*$('xxx').attr()  根据完整的属性名称 可获取值*/
+        /*dom.dataset  是用来操作自定义属性的 */
+        /*1.什么是自定义属性*/
+        /*2.以data-开始的数据 就是自定义数据  遵循驼峰命名法 */
+
+        /*点击加载*/
+        /*1.防止重复提交*/
+        /*2.当没有数据的时候 按钮无效*/
+        $btn.on('click',function(){
+            if($btn.hasClass('loading')){
+                return false;
+            }
+            render();
+        });
+
+
+        /*滚动加载*/
+        $(window).on('scroll', function () {
+            /*获取页面整个高度*/
+            var itemsHeight = $items.height();
+            var offsetTop = $items.offset().top;
+            /*获取滚动的时候距离顶部的高度  浏览器窗口的高度*/
+            var scrollTop = $(window).scrollTop();
+            var windowHeight = $(window).height();
+            /*如果剩余的高度  在200px内 并且上一页的数据已经加载完成  才能加载下一页*/
+            var h = itemsHeight + offsetTop - scrollTop - windowHeight;
+            if (h <= 200 && !$btn.hasClass('loading')) {
+                render();
+            }
+        });
+
+    });
+</script>
+</body>
+</html>
