@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <title></title>
     <style>
-    .ng-cloak {
-        display: none!important;
-    }
-</style>
+        .ng-cloak {
+            display: none!important;
+        }
+    </style>
 </head>
 <body ng-app="app" ng-controller="myController">
 <button class="ng-cloak">{{ss}}</button>
@@ -15,21 +15,12 @@
 <script src="./jquery.cookie.js"></script>
 <script src="./angular.js"></script>
 <script>
-    angular.module('app', []).controller('myController', function ($scope) {
+    angular.module("app",[]).controller("myController",function($scope){
         $scope.ss = $.cookie("id") || 0;
-        $.ajax({
-            type: 'post',
-            url: '11.php',
-            data: {
-                gg: $scope.ss
-            },
-            success: function (data) {
-                console.log(data);
-                $scope.ss = (1) + ($scope.ss-0);
-                $.cookie("id", $scope.ss);
-            }
-        })
-    })
+        $scope.ss = (1) + ($scope.ss-0);
+        $.cookie("id", $scope.ss);
+    });
+
 </script>
 </body>
 </html>
